@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resizable Split View Web Component</title>
+  <script type="module">
+    class ResizableSplitView extends HTMLElement {
+      constructor() {
+        super();
+
+        // Create shadow DOM
+        this.attachShadow({ mode: 'open' });
+
+        // Set up the initial structure of the component
+        this.shadowRoot.innerHTML = `
+          <style>
+            main {
+              margin: 0;
+              height: 100vh;
+              overflow: hidden;
+              display: flex;
+            }
+
+            #pane1 {
+              flex: 1;
+              background-color: wheat;
+              overflow: auto;
+              height: 100%;
+            }
+
+            #gutter {
+              cursor: col-resize;
+              width: 10px;
+              background-color: #eee;
+              background-repeat: no-repeat;
+              background-position: 50%;
+              background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+            }
+
+            #pane2 {
+              flex: 1;
+              background-color: pink;
+              overflow: auto;
+              height: 100%;
+            }
+          </style>
+          <main>
+            <div id="pane1">
+              <h2>Pane 1</h2>
+              <slot name="pane1"></slot>
+            </div>
+            <div id="gutter"></div>
+            <div id="pane2">
+              <h2>Pane 2</h2>
+              <slot name="pane2"></slot>
+            </div>
+          </main>
+        `;
+
+        this.setupDragging();
+      }
+
+      setupDragging() {
+        let isDragging = false;
+        const gutter = this.shadowRoot.getElementById('gutter');
+        const pane1 = this.shadowRoot.getElementById('pane1');
+        const pane2 = this.shadowRoot.getElementById('pane2');
+
+        const startDragging = (event) => {
+          isDragging = true;
+          document.addEventListener('mousemove', handleDragging);
+          document.addEventListener('mouseup', stopDragging);
+        };
+
+        const handleDragging = (event) => {
+          if (isDragging) {
+            const rect = this.getBoundingClientRect();
+            const relativeX = event.clientX - rect.left;
+            const percentage = (relativeX / rect.width) * 100;
+
+            pane1.style.flex = percentage + '%';
+            pane2.style.flex = (100 - percentage) + '%';
+          }
+        };
+
+        const stopDragging = () => {
+          isDragging = false;
+          document.removeEventListener('mousemove', handleDragging);
+          document.removeEventListener('mouseup', stopDragging);
+        };
+
+        gutter.addEventListener('mousedown', startDragging);
+      }
+    }
+
+    customElements.define('resizable-split-view', ResizableSplitView);
+  </script>
+</head>
+<body>
+  <resizable-split-view>
+    <div slot="pane1">Content for Pane 1</div>
+    <div slot="pane2">Content for Pane 2</div>
+  </resizable-split-view>
+</body>
+</html>
